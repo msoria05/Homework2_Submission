@@ -1,0 +1,163 @@
+Sub StockData()
+
+'Declare variable for worksheet
+  Dim WS As Worksheet
+
+' Begin the (outer) loop, which will allow script to run on every worksheet by running the macro only once
+   For Each WS In Worksheets
+   WS.Activate
+   
+ ' Add column headings to each worsheet in the loop
+   WS.Cells(1, 9) = "Ticker"
+   WS.Cells(1, 10) = "Yearly Change"
+   WS.Cells(1, 11) = "Percent Change"
+   WS.Cells(1, 12) = "Total Stock Volume"
+   WS.Cells(2, 14) = "Greatest % Increase"
+   WS.Cells(3, 14) = "Greatest % Decrease"
+   WS.Cells(4, 14) = "Greatest Total Volume"
+   WS.Cells(1, 15) = "Ticker"
+   WS.Cells(1, 16) = "Value"
+
+  ' Declare variables for inner loop
+     Dim Symbol As String
+     Dim Volume As Double
+     Dim TotalVolume As Double
+     Dim SummaryTable_Row As Integer
+     Dim LastRow As Double
+     Dim LastRowTotals As Double
+     Dim OpeningPrice As Double
+     Dim ClosingPrice As Double
+     Dim YearlyChange As Double
+     Dim PercentChange As Double
+     Dim ticker1 As String
+     Dim ticker2 As String
+     Dim ticker3 As String
+     Dim MaxVolume As Double
+     Dim GreatestINcrease As Double
+     Dim GreatestDEcrease As Double
+  
+  'Find the last non-blank cell in column A(1)
+     LastRow = Cells(Rows.Count, 1).End(xlUp).Row
+  
+  ' Initialze variables
+     SummaryTable_Row = 2
+     OpeningPrice = Cells(2, 3).Value
+     MaxVolume = 0
+     GreatestINcrease = 0
+     GreatestDEcrease = 0
+  
+   ' Set up loop (from row 2 to LastRow) and initialize variables contained within the loop
+    ' Note, the inner loop is specific to each worksheet
+      For i = 2 To LastRow
+      Symbol = Cells(i, 1).Value
+      ClosingPrice = Cells(i, 6).Value
+      Volume = Cells(i, 7).Value
+     
+   ' Set if statement to check if the next ticker symbol is still the same
+   ' If next symbol is different add volume from that row and print total volume and change in price
+       If Cells(i + 1, 1).Value <> Cells(i, 1).Value Then
+         TotalVolume = Volume + TotalVolume
+         YearlyChange = ClosingPrice - OpeningPrice
+             
+         ' Set up percent change claculation but eliminate possible error from dividing by zero
+             If OpeningPrice = 0 Then
+               PercentChange = 100
+              Else
+               PercentChange = 100 * YearlyChange / OpeningPrice
+             End If
+       ' Print the ticker symbol and total volume in summary table
+           Range("I" & SummaryTable_Row).Value = Symbol
+           Range("J" & SummaryTable_Row).Value = YearlyChange
+           Range("K" & SummaryTable_Row).Value = Str(PercentChange) & "%"
+           Range("L" & SummaryTable_Row).Value = TotalVolume
+      
+       ' Reset Total Volume to zero and increment Summary Table Row by 1
+           TotalVolume = 0
+           SummaryTable_Row = SummaryTable_Row + 1
+       ' Set new OpeningPrice for next ticker symbol
+           OpeningPrice = Cells(i + 1, 3).Value
+      
+    ' Set else statement to sum up total volume for all row with same ticker symbol
+      Else
+        TotalVolume = Volume + TotalVolume
+     
+    End If
+
+  Next i
+  
+    ' Set conditional formatting for PriceChange
+      GreenColor = RGB(0, 242, 0)
+      RedColor = RGB(255, 0, 0)
+      WhiteColor = RGB(255, 255, 255)
+
+     'Get number of rows in the specified column
+      RowsCount = Range("J2", Range("J2").End(xlDown)).Rows.Count
+
+    'Select column for conditional formatting
+     Range("J2").Select
+
+    'Loop through the rows in J column for conditional formatting
+     For x = 1 To RowsCount
+        If ((ActiveCell.Value) < 0) Then
+            ActiveCell.Interior.Color = RedColor
+        ElseIf ((ActiveCell.Value) > 0) Then
+            ActiveCell.Interior.Color = GreenColor
+        ElseIf ((ActiveCell.Value) = 0) Then
+            ActiveCell.Interior.Color = WhiteColor
+
+        End If
+
+        ActiveCell.Offset(1, 0).Select
+
+    Next
+    
+    ' The following will evaluate ticker totals and find max values
+    ' Find the last non-blank cell in column L( Colum 12)
+      LastRowTotals = Cells(Rows.Count, 12).End(xlUp).Row
+     
+    ' Initial ticker value for Max Total Volume
+      ticker1 = Cells(2, 9)
+     
+    ' Check for Max Total Volume
+       For J = 2 To LastRow
+         If Cells(J, 12).Value > MaxVolume Then
+            MaxVolume = Cells(J, 12).Value
+            ticker = Cells(J, 9).Value
+          End If
+        Next J
+     ' Display max total volume and corresponding symbol
+        Cells(4, 16).Value = MaxVolume
+        Cells(4, 15).Value = ticker1
+        
+    ' Initial ticker value for Greatest % Inecrease
+        ticker2 = Cells(2, 9)
+     
+    ' Check for Greatest % Increase
+       For k = 2 To LastRow
+         If Cells(k, 11).Value > GreatestINcrease Then
+            GreatestINcrease = Cells(k, 11).Value
+            ticker2 = Cells(k, 9).Value
+          End If
+        Next k
+     ' Display greatest % increase and corresponding symbol
+        Range("P" & 2).Value = Str((GreatestINcrease * 100)) & "%"
+        Cells(2, 15).Value = ticker2
+        
+     ' Initial ticker value for Greatest % Decrease
+        ticker3 = Cells(2, 9)
+        
+     ' Check for Greatest % Decrease
+       For m = 2 To LastRow
+         If Cells(m, 11).Value < GreatestDEcrease Then
+            GreatestDEcrease = Cells(m, 11).Value
+            ticker3 = Cells(m, 9).Value
+          End If
+        Next m
+     ' Display greatest % decrease and corresponding symbol
+        Range("P" & 3).Value = Str((GreatestDEcrease * 100)) & "%"
+        Cells(3, 15).Value = ticker3
+  Next
+    
+End Sub
+
+
